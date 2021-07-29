@@ -40,9 +40,9 @@ const Setings = ({ settingsOpen, handleReset }) => {
                     <i className="fa fa-arrow-up text-3xl"></i>
                 </button>
             </div>
-            <button className={button} onCick={handleReset} id="reset">
+            {/* <button className={button} onCick={handleReset} id="reset">
                 reset
-            </button>
+            </button> */}
         </div>
     );
 };

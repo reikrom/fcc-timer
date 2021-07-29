@@ -14,12 +14,12 @@ function Timer() {
     const [breakLength, setBreakLength] = useState(0.2);
 
     const [isPaused, setIsPaused] = useState(false);
-    const [isBreak, setIsBreak] = useState(false);
 
     const audioRef = useRef(null);
     const timerRef = useRef({
         isSession: false,
         isBreak: false,
+        session: 'main', // main, break
         isRunning: false,
         startTime: null,
         endTime: null,
@@ -31,7 +31,6 @@ function Timer() {
     const [timeLeft, setTimeLeft] = useState(toMs(sessionLength));
 
     const playPause = () => {
-        // timer.isSession = true;
         timer.isRunning = true;
 
         // calculate time left
@@ -48,6 +47,7 @@ function Timer() {
     };
     const reset = () => {
         timer.isRunning = false;
+        timer.session = 'main';
 
         setTimeLeft(toMs(sessionLength));
 
@@ -61,7 +61,7 @@ function Timer() {
         },
         isPaused && timeLeft > 0 ? 200 : null
     );
-
+    
     const incrementSession = () => {
         setSessionLength(sessionLength + 1);
     };
@@ -79,33 +79,39 @@ function Timer() {
         new Audio(audioRef.current.currentSrc).play();
     };
 
+    // when timer finishes, play audio and pause the timer and change it to break
     useEffect(() => {
+        // so this works
+        // audioRef.current.play()
         if (timeLeft <= 0) {
             playAudio();
-            setIsPaused(true);
+            console.log(timer.session, 'timer.session')
+            // handle session changes in timer ref
+            if (timer.isRunning && timer.session === 'main') {
+                timer.session = 'break';
+            } else if (timer.isRunning && timer.session === 'break') {
+                timer.session = 'main';
+            }
         }
-    }, [timeLeft]);
+    }, [isPaused, timeLeft, timer]);
 
-    // change to the next session type
     useEffect(() => {
-        if (timeLeft <= 0 && isPaused) {
-            if (!isBreak) {
-                // set up new time for a break
+        if (timeLeft <= 0) {
+            // unpause after a second
+            setTimeout(() => {
+            if (timer.isRunning  && timer.session === 'break') {
                 timer.startTime = getNow();
                 timer.endTime = getNow() + toMs(breakLength);
                 console.log(timer, 'timer1');
-            } else {
-                // set up new time for a session
+            } else if (timer.isRunning  && timer.session === 'main') {
                 timer.startTime = getNow();
                 timer.endTime = getNow() + toMs(sessionLength);
                 console.log(timer, 'timer2');
             }
             setTimeLeft(Math.max(0, timer.endTime - getNow()));
-            setTimeout(() => {
-                setIsPaused(false);
-            }, 1000);
-        }
-    }, [breakLength, isBreak, isPaused, sessionLength, timeLeft, timer]);
+        }   , 2000);
+    }
+    }, [breakLength, isPaused, sessionLength, timeLeft, timer]);
 
     return (
         <>

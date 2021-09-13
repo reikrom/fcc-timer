@@ -12,9 +12,24 @@ function Timer() {
     // settings
     const [sessionLength, setSessionLength] = useState(0.1);
     const [breakLength, setBreakLength] = useState(0.2);
+    // dispaly time
+    const [timeLeft, setTimeLeft] = useState(toMs(sessionLength));
+    const incrementSession = () => {
+        setSessionLength(sessionLength + 1);
+    };
+    const decrementSession = () => {
+        setSessionLength(sessionLength - 1);
+    };
+    const breakIncrement = () => {
+        setBreakLength(breakLength + 1);
+    };
+    const breakDecrement = () => {
+        setBreakLength(breakLength - 1);
+    };
 
     const [isPaused, setIsPaused] = useState(false);
-    const [isBreak, setIsBreak] = useState(false);
+    const [sessionFinished, setSessionFinished] = useState(false);
+    // const [isBreak, setIsBreak] = useState(false);
 
     const audioRef = useRef(null);
     const timerRef = useRef({
@@ -26,17 +41,27 @@ function Timer() {
     });
     const timer = timerRef.current;
 
-    // useContext for timerRef
+    // session has finished
+    useEffect(() => {
+        if (timeLeft <= 0) {
+            console.log('session finished');
+            setSessionFinished(true);
+        }
+    }, [timeLeft]);
 
-    const [timeLeft, setTimeLeft] = useState(toMs(sessionLength));
+    // play sound
+    useEffect(() => {
+        if (sessionFinished) {
+            playAudio();
+        }
+    }, [sessionFinished]);
 
     const playPause = () => {
-        // timer.isSession = true;
         timer.isRunning = true;
 
         // calculate time left
-        timer.endTime = getNow() + timeLeft;
         timer.startTime = getNow();
+        timer.endTime = getNow() + timeLeft;
 
         setIsPaused(!isPaused);
     };
@@ -55,57 +80,58 @@ function Timer() {
         setBreakLength(5);
     };
 
+    // ticking logic
     useInterval(
         () => {
-            setTimeLeft(Math.max(0, timer.endTime - getNow()));
+            timeLeft > 0 && setTimeLeft(Math.max(0, timer.endTime - getNow()));
         },
-        isPaused && timeLeft > 0 ? 200 : null
+        isPaused && !sessionFinished ? 200 : null
     );
-
-    const incrementSession = () => {
-        setSessionLength(sessionLength + 1);
-    };
-    const decrementSession = () => {
-        setSessionLength(sessionLength - 1);
-    };
-    const breakIncrement = () => {
-        setBreakLength(breakLength + 1);
-    };
-    const breakDecrement = () => {
-        setBreakLength(breakLength - 1);
-    };
 
     const playAudio = () => {
         new Audio(audioRef.current.currentSrc).play();
+        // wait for the audio to finish
+        setTimeout(() => {
+            console.log('play audio && session finished = false');
+            setSessionFinished(false);
+        }, 2500);
     };
-
-    useEffect(() => {
-        if (timeLeft <= 0) {
-            playAudio();
-            setIsPaused(true);
-        }
-    }, [timeLeft]);
 
     // change to the next session type
     useEffect(() => {
-        if (timeLeft <= 0 && isPaused) {
-            if (!isBreak) {
+        if (timeLeft <= 0 && sessionFinished) {
+            if (!timer.isBreak) {
                 // set up new time for a break
                 timer.startTime = getNow();
                 timer.endTime = getNow() + toMs(breakLength);
-                console.log(timer, 'timer1');
+                console.log(timer, 'set up break times in ref');
             } else {
                 // set up new time for a session
+                const endTime = getNow() + toMs(sessionLength);
+
                 timer.startTime = getNow();
-                timer.endTime = getNow() + toMs(sessionLength);
-                console.log(timer, 'timer2');
+                timer.endTime = endTime;
+                timer.isBreak = false;
+                console.log(timer, 'set up main session time in ref');
             }
             setTimeLeft(Math.max(0, timer.endTime - getNow()));
             setTimeout(() => {
                 setIsPaused(false);
             }, 1000);
         }
-    }, [breakLength, isBreak, isPaused, sessionLength, timeLeft, timer]);
+    }, [breakLength, sessionFinished, sessionLength, timeLeft, timer]);
+
+    // useEffect(() => {
+    //     if (sessionFinished) {
+    //         if (!isBreak) {
+    //             timer.startTime = getNow();
+    //             timer.endTime = getNow() + toMs(breakLength)
+    //         }
+    //         else {
+    //             timer.startTime =
+    //         }
+    //     }
+    // }, [])
 
     return (
         <>

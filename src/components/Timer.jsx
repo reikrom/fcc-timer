@@ -35,6 +35,7 @@ function Timer() {
     const timerRef = useRef({
         isSession: false,
         isBreak: false,
+        session: 'main', // main, break
         isRunning: false,
         startTime: null,
         endTime: null,
@@ -73,6 +74,7 @@ function Timer() {
     };
     const reset = () => {
         timer.isRunning = false;
+        timer.session = 'main';
 
         setTimeLeft(toMs(sessionLength));
 

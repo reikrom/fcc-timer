@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import Settings from './Settings';
 
-const Layout = ({ isPaused, audioRef, playPause, stop, reset, timeLeft }) => {
+const Layout = ({ isPaused, audioRef, playPause, timeLeft }) => {
     const handleStartStop = (params) => {
         playPause();
     };
 
     const [settingsOpen, setSettingsOpen] = useState(false);
-
-    const handleSettings = () => {
+    const openSettings = () => {
         setSettingsOpen((state) => !state);
     };
-
     const handleReset = () => {
         setSettingsOpen(false);
     };
@@ -19,7 +17,7 @@ const Layout = ({ isPaused, audioRef, playPause, stop, reset, timeLeft }) => {
     return (
         <div className="App noselect text-white m-auto h-screen flex items-center justify-center">
             <i
-                onClick={handleSettings}
+                onClick={openSettings}
                 className="fa fa-gear text-6xl absolute right-3 top-3 opacity-40 hover:opacity-100"
             />
             {/* Settings */}

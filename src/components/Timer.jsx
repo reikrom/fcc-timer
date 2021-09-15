@@ -2,31 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import Layout from './Layout';
 import useInterval from '../hooks/useInterval';
 import { formatMs, getNow, toMs } from '../utils/timeHelper';
+import { useDispatch, useSelector } from 'react-redux';
 
 function Timer() {
     // settings
-    const [sessionLength, setSessionLength] = useState(0.1);
-    const [breakLength, setBreakLength] = useState(0.2);
-    // settings useContext
-    const timerSettings = {
-        sessionLength,
-        breakLength,
-    };
+    // const [sessionLength, setSessionLength] = useState(0.1);
+    // const [breakLength, setBreakLength] = useState(0.2);
+    const { sessionLength, breakLength } = useSelector((state) => state.timer);
+    const dispatch = useDispatch();
 
     // dispaly time
     const [timeLeft, setTimeLeft] = useState(toMs(sessionLength));
-    const incrementSession = () => {
-        setSessionLength(sessionLength + 1);
-    };
-    const decrementSession = () => {
-        setSessionLength(sessionLength - 1);
-    };
-    const breakIncrement = () => {
-        setBreakLength(breakLength + 1);
-    };
-    const breakDecrement = () => {
-        setBreakLength(breakLength - 1);
-    };
 
     const [isPaused, setIsPaused] = useState(true);
     const [sessionFinished, setSessionFinished] = useState(false);
@@ -82,26 +68,18 @@ function Timer() {
             timer.startTime = getNow();
             timer.endTime = getNow() + timeLeft;
 
-            timer.isRunning = !timer.isRunning;
+            // rei @TODO: add a stop button to set isRunning false etc
+            timer.isRunning = true;
             setIsPaused(!isPaused);
         }
-        // rei @TODO: connect play button icon with state
     };
-    const stop = () => {
-        timer.isRunning = false;
-        timer.startTime = null;
-        timer.endTime = null;
-        setTimeLeft(toMs(sessionLength));
-    };
-    const reset = () => {
-        timer.isRunning = false;
-        timer.session = 'main';
 
-        setTimeLeft(toMs(sessionLength));
+    // const reset = () => {
+    //     timer.isRunning = false;
+    //     timer.session = 'main';
 
-        setSessionLength(25);
-        setBreakLength(5);
-    };
+    //     setTimeLeft(toMs(sessionLength));
+    // };
 
     // ticking logic
     useInterval(
@@ -113,13 +91,20 @@ function Timer() {
         !isPaused && !sessionFinished ? 200 : null
     );
 
+    let displayTime;
+    if (timer.isRunning) {
+        displayTime = formatMs(timeLeft);
+    } else {
+        displayTime =
+            timer.session === 'main'
+                ? `${sessionLength}:00`
+                : `${breakLength}:00`;
+    }
     return (
         <>
             <Layout
-                timeLeft={formatMs(timeLeft)}
+                timeLeft={displayTime}
                 playPause={playPause}
-                stop={stop}
-                reset={reset}
                 isPaused={isPaused}
             />
             <audio

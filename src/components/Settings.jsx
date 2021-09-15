@@ -1,9 +1,20 @@
 import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+    decrementBreak,
+    decrementSession,
+    incrementBreak,
+    incrementSession,
+    resetSettings,
+} from '../features/timer/timerSlice';
 import Button from './Button';
 import IconButton from './IconButton';
 import Label from './Label';
 
 const Setings = ({ settingsOpen, handleReset }) => {
+    const { sessionLength, breakLength } = useSelector((state) => state.timer);
+    const dispatch = useDispatch();
+
     return (
         <div
             className={` bg-white transition-all rounded-md text-black w-full absolute z-10 p-10 max-w-sm   ${
@@ -16,15 +27,15 @@ const Setings = ({ settingsOpen, handleReset }) => {
 
                 <IconButton
                     id="break-decrement"
-                    onClick={() => {}}
+                    onClick={() => dispatch(decrementBreak())}
                     iconName="fa fa-arrow-down"
                 />
                 <span className="mx-3" id="break-length">
-                    5:00
+                    {breakLength}
                 </span>
                 <IconButton
                     id="break-increment"
-                    onClick={() => {}}
+                    onClick={() => dispatch(incrementBreak())}
                     iconName="fa fa-arrow-up"
                 />
             </div>
@@ -32,20 +43,20 @@ const Setings = ({ settingsOpen, handleReset }) => {
                 <Label id="session-label" text="Session Length" />
                 <IconButton
                     id="session-decrement"
-                    onClick={() => {}}
+                    onClick={() => dispatch(decrementSession())}
                     iconName="fa fa-arrow-down"
                 />
                 <span className="mx-3" id="session-length">
-                    25:00
+                    {sessionLength}
                 </span>
                 <IconButton
                     id="session-increment"
-                    onClick={() => {}}
+                    onClick={() => dispatch(incrementSession())}
                     iconName="fa fa-arrow-up"
                 />
             </div>
 
-            <Button onClick={handleReset} id="reset">
+            <Button onClick={() => dispatch(resetSettings())} id="reset">
                 reset
             </Button>
         </div>

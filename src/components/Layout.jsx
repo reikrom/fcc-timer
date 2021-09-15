@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import Settings from './Settings';
 
-const Layout = ({ audioRef, playPause, stop, reset, timeLeft }) => {
+const Layout = ({ isPaused, audioRef, playPause, stop, reset, timeLeft }) => {
     const handleStartStop = (params) => {
-        setPlaying((state) => !state);
         playPause();
     };
 
-    const [playing, setPlaying] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
 
     const handleSettings = () => {
@@ -16,8 +14,6 @@ const Layout = ({ audioRef, playPause, stop, reset, timeLeft }) => {
 
     const handleReset = () => {
         setSettingsOpen(false);
-        setPlaying(false);
-        audioRef.current.pause();
     };
 
     return (
@@ -44,7 +40,7 @@ const Layout = ({ audioRef, playPause, stop, reset, timeLeft }) => {
                     onClick={handleStartStop}
                     id="start_stop"
                 >
-                    {!playing ? (
+                    {isPaused ? (
                         <i
                             className="fa fa-play absolute"
                             style={{ top: '26%', left: '36%' }}

@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import Layout from './Layout';
 import useInterval from '../hooks/useInterval';
-import {
-    formatMs,
-    formatTimeStampHHMMSS,
-    getNow,
-    toMs,
-} from '../utils/timeHelper';
+import { formatMs, getNow, toMs } from '../utils/timeHelper';
 
 function Timer() {
     // settings
     const [sessionLength, setSessionLength] = useState(0.1);
     const [breakLength, setBreakLength] = useState(0.2);
+    // settings useContext
+    const timerSettings = {
+        sessionLength,
+        breakLength,
+    };
+
     // dispaly time
     const [timeLeft, setTimeLeft] = useState(toMs(sessionLength));
     const incrementSession = () => {
@@ -27,14 +28,11 @@ function Timer() {
         setBreakLength(breakLength - 1);
     };
 
-    const [isPaused, setIsPaused] = useState(false);
+    const [isPaused, setIsPaused] = useState(true);
     const [sessionFinished, setSessionFinished] = useState(false);
-    // const [isBreak, setIsBreak] = useState(false);
 
     const audioRef = useRef(null);
     const timerRef = useRef({
-        isSession: false,
-        isBreak: false,
         session: 'main', // main, break
         isRunning: false,
         startTime: null,
@@ -45,26 +43,49 @@ function Timer() {
     // session has finished
     useEffect(() => {
         if (timeLeft <= 0) {
-            console.log('session finished');
+            // session has finished but timer.isRunning is still true
             setSessionFinished(true);
         }
     }, [timeLeft]);
 
-    // play sound
+    // handle session change
     useEffect(() => {
         if (sessionFinished) {
             playAudio();
+
+            // wait for the audio to finish
+            setTimeout(() => {
+                function calcEndTime(session) {
+                    const timeBuffer = 900;
+                    return getNow() + toMs(session) + timeBuffer;
+                }
+
+                if (timer.session === 'main') {
+                    timer.endTime = calcEndTime(breakLength);
+                    timer.session = 'break';
+                } else {
+                    timer.endTime = calcEndTime(sessionLength);
+                    timer.session = 'main';
+                }
+                setSessionFinished(false);
+            }, 2500);
         }
-    }, [sessionFinished]);
+    }, [breakLength, sessionFinished, sessionLength, timer]);
+
+    const playAudio = () => {
+        new Audio(audioRef.current.currentSrc).play();
+    };
 
     const playPause = () => {
-        timer.isRunning = true;
+        if (!sessionFinished) {
+            // calculate time left
+            timer.startTime = getNow();
+            timer.endTime = getNow() + timeLeft;
 
-        // calculate time left
-        timer.startTime = getNow();
-        timer.endTime = getNow() + timeLeft;
-
-        setIsPaused(!isPaused);
+            timer.isRunning = !timer.isRunning;
+            setIsPaused(!isPaused);
+        }
+        // rei @TODO: connect play button icon with state
     };
     const stop = () => {
         timer.isRunning = false;
@@ -85,100 +106,28 @@ function Timer() {
     // ticking logic
     useInterval(
         () => {
-            timeLeft > 0 && setTimeLeft(Math.max(0, timer.endTime - getNow()));
+            const remainder = Math.max(0, timer.endTime - getNow());
+
+            !sessionFinished && setTimeLeft(remainder);
         },
-        isPaused && !sessionFinished ? 200 : null
+        !isPaused && !sessionFinished ? 200 : null
     );
-
-    const playAudio = () => {
-        new Audio(audioRef.current.currentSrc).play();
-        // wait for the audio to finish
-        setTimeout(() => {
-            console.log('play audio && session finished = false');
-            setSessionFinished(false);
-        }, 2500);
-    };
-
-    // change to the next session type
-    useEffect(() => {
-        if (timeLeft <= 0 && sessionFinished) {
-            if (!timer.isBreak) {
-                // set up new time for a break
-                timer.startTime = getNow();
-                timer.endTime = getNow() + toMs(breakLength);
-                console.log(timer, 'set up break times in ref');
-            } else {
-                // set up new time for a session
-                const endTime = getNow() + toMs(sessionLength);
-
-                timer.startTime = getNow();
-                timer.endTime = endTime;
-                timer.isBreak = false;
-                console.log(timer, 'set up main session time in ref');
-            }
-            setTimeLeft(Math.max(0, timer.endTime - getNow()));
-            setTimeout(() => {
-                setIsPaused(false);
-            }, 1000);
-        }
-    }, [breakLength, sessionFinished, sessionLength, timeLeft, timer]);
-
-    // useEffect(() => {
-    //     if (sessionFinished) {
-    //         if (!isBreak) {
-    //             timer.startTime = getNow();
-    //             timer.endTime = getNow() + toMs(breakLength)
-    //         }
-    //         else {
-    //             timer.startTime =
-    //         }
-    //     }
-    // }, [])
 
     return (
         <>
-            startTime: {formatTimeStampHHMMSS(timer.startTime)} <br />
-            endTime: {formatTimeStampHHMMSS(timer.endTime)} <br />
-            timeLeft: {timeLeft} <br />
-            <i
-                onClick={() => incrementSession(sessionLength)}
-                className="fa fa-arrow-up"
-            />
-            sessionL: {sessionLength}
-            <i
-                onClick={() => decrementSession(sessionLength)}
-                className="fa fa-arrow-down"
-            />
-            <br />
-            <i
-                onClick={() => breakIncrement(breakLength)}
-                className="fa fa-arrow-up"
-            />
-            breakL: {breakLength}
-            <i
-                onClick={() => breakDecrement(breakLength)}
-                className="fa fa-arrow-down"
-            />
-            <br /> Timer: <br />
-            {formatMs(timeLeft)}
-            <div onClick={playPause}>Start</div>
-            <div onClick={stop}>Stop</div>
-            <div onClick={reset}>reset</div>
-            <div onClick={playAudio}>paly audio</div>
-            {/* <div onClick={b2}>Pause</div>
-            <div onClick={b3}>resume</div> */}
             <Layout
                 timeLeft={formatMs(timeLeft)}
                 playPause={playPause}
                 stop={stop}
                 reset={reset}
+                isPaused={isPaused}
             />
             <audio
                 id="beep"
                 src="https://raw.githubusercontent.com/freeCodeCamp/cdn/master/build/testable-projects-fcc/audio/BeepSound.wav"
                 preload="auto"
                 ref={audioRef}
-            ></audio>
+            />
         </>
     );
 }

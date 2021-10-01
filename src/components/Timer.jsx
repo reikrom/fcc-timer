@@ -3,28 +3,29 @@ import Layout from './Layout';
 import useInterval from '../hooks/useInterval';
 import { formatMs, getNow, toMs } from '../utils/timeHelper';
 import { useDispatch, useSelector } from 'react-redux';
+import { startTimer, playPauseTimer } from '../features/timer/timerSlice';
 
 function Timer() {
     // settings
-    // const [sessionLength, setSessionLength] = useState(0.1);
-    // const [breakLength, setBreakLength] = useState(0.2);
-    const { sessionLength, breakLength } = useSelector((state) => state.timer);
+    const { sessionLength, breakLength, isRunning, isPaused } = useSelector(
+        (state) => state.timer
+    );
     const dispatch = useDispatch();
 
-    // dispaly time
     const [timeLeft, setTimeLeft] = useState(toMs(sessionLength));
-
-    const [isPaused, setIsPaused] = useState(true);
     const [sessionFinished, setSessionFinished] = useState(false);
 
     const audioRef = useRef(null);
     const timerRef = useRef({
-        session: 'main', // main, break
-        isRunning: false,
+        session: 'session', // session, break
         startTime: null,
         endTime: null,
     });
     const timer = timerRef.current;
+
+    useEffect(() => {
+        setTimeLeft(toMs(sessionLength));
+    }, [sessionLength]);
 
     // session has finished
     useEffect(() => {
@@ -39,22 +40,22 @@ function Timer() {
         if (sessionFinished) {
             playAudio();
 
-            // wait for the audio to finish
-            setTimeout(() => {
-                function calcEndTime(session) {
-                    const timeBuffer = 900;
-                    return getNow() + toMs(session) + timeBuffer;
-                }
+            function calcEndTime(session) {
+                const timeBuffer = 500;
+                return getNow() + toMs(session) + timeBuffer;
+            }
 
-                if (timer.session === 'main') {
-                    timer.endTime = calcEndTime(breakLength);
-                    timer.session = 'break';
-                } else {
-                    timer.endTime = calcEndTime(sessionLength);
-                    timer.session = 'main';
-                }
-                setSessionFinished(false);
-            }, 2500);
+            // wait for the audio to finish
+            // setTimeout(() => {
+            if (timer.session === 'session') {
+                timer.endTime = calcEndTime(breakLength);
+                timer.session = 'break';
+            } else {
+                timer.endTime = calcEndTime(sessionLength);
+                timer.session = 'session';
+            }
+            setSessionFinished(false);
+            // }, 2500);
         }
     }, [breakLength, sessionFinished, sessionLength, timer]);
 
@@ -68,18 +69,10 @@ function Timer() {
             timer.startTime = getNow();
             timer.endTime = getNow() + timeLeft;
 
-            // rei @TODO: add a stop button to set isRunning false etc
-            timer.isRunning = true;
-            setIsPaused(!isPaused);
+            !isRunning ? dispatch(startTimer()) : dispatch(playPauseTimer());
+            // setIsPaused(!isPaused);
         }
     };
-
-    // const reset = () => {
-    //     timer.isRunning = false;
-    //     timer.session = 'main';
-
-    //     setTimeLeft(toMs(sessionLength));
-    // };
 
     // ticking logic
     useInterval(
@@ -92,11 +85,11 @@ function Timer() {
     );
 
     let displayTime;
-    if (timer.isRunning) {
+    if (isRunning) {
         displayTime = formatMs(timeLeft);
     } else {
         displayTime =
-            timer.session === 'main'
+            timer.session === 'session'
                 ? `${sessionLength}:00`
                 : `${breakLength}:00`;
     }
@@ -106,6 +99,7 @@ function Timer() {
                 timeLeft={displayTime}
                 playPause={playPause}
                 isPaused={isPaused}
+                session={timer.session}
             />
             <audio
                 id="beep"

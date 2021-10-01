@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import Settings from './Settings';
 
-const Layout = ({ isPaused, audioRef, playPause, timeLeft }) => {
+const Layout = ({ isPaused, audioRef, playPause, timeLeft, session }) => {
     const handleStartStop = (params) => {
         playPause();
     };
@@ -10,9 +11,8 @@ const Layout = ({ isPaused, audioRef, playPause, timeLeft }) => {
     const openSettings = () => {
         setSettingsOpen((state) => !state);
     };
-    const handleReset = () => {
-        setSettingsOpen(false);
-    };
+
+    // const { type } = useSelector((state) => state.timer);
 
     return (
         <div className="App noselect text-white m-auto h-screen flex items-center justify-center">
@@ -21,11 +21,11 @@ const Layout = ({ isPaused, audioRef, playPause, timeLeft }) => {
                 className="fa fa-gear text-6xl absolute right-3 top-3 opacity-40 hover:opacity-100"
             />
             {/* Settings */}
-            <Settings settingsOpen={settingsOpen} handleReset={handleReset} />
+            <Settings settingsOpen={settingsOpen} />
             {/* Display */}
             <div className="">
-                <label className="text-4xl" id="timer-label">
-                    25 + 5 Timer
+                <label className="text-4xl capitalize " id="timer-label">
+                    {session}
                 </label>
                 <div
                     className="font-orbitron font-bold text-8xl"

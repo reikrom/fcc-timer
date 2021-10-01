@@ -6,14 +6,20 @@ import {
     incrementBreak,
     incrementSession,
     resetSettings,
+    stopTimer,
 } from '../features/timer/timerSlice';
 import Button from './Button';
 import IconButton from './IconButton';
 import Label from './Label';
 
-const Setings = ({ settingsOpen, handleReset }) => {
+const Setings = ({ settingsOpen }) => {
     const { sessionLength, breakLength } = useSelector((state) => state.timer);
     const dispatch = useDispatch();
+
+    const handleReset = () => {
+        dispatch(resetSettings());
+        dispatch(stopTimer());
+    };
 
     return (
         <div
@@ -56,7 +62,7 @@ const Setings = ({ settingsOpen, handleReset }) => {
                 />
             </div>
 
-            <Button onClick={() => dispatch(resetSettings())} id="reset">
+            <Button onClick={handleReset} id="reset">
                 reset
             </Button>
         </div>

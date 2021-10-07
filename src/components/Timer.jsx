@@ -22,6 +22,7 @@ function Timer() {
         audioRef.current.play();
     }
 
+    // for tests
     if (!t.isRunning && audioRef && audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
@@ -44,29 +45,6 @@ function Timer() {
         t.isRunning && !t.isPaused && !t.sessionFinished ? 200 : null
     );
 
-    // handle session change
-    // useEffect(() => {
-    //     if (t.playAudio) {
-    //         audioRef.current.play();
-    //     }
-
-    //     if (t.sessionFinished) {
-    //         if (t.sessionType === 'main') {
-    //             d(startBreak());
-    //         } else {
-    //             d(startMainSession());
-    //         }
-
-    //         // setTimeout(() => {
-    //         //     if (t.sessionType === 'main') {
-    //         //         d(startBreak());
-    //         //     } else {
-    //         //         d(startMainSession());
-    //         //     }
-    //         // }, 3000);
-    //     }
-    // }, [d, t.playAudio, t.sessionFinished, t.sessionType]);
-
     // initiate session end
     useEffect(() => {
         if (!t.isPaused && t.timeLeft <= 0 && !t.sessionFinished) {
@@ -84,7 +62,6 @@ function Timer() {
         }
     };
 
-    // rei @TODO: move this to layout?
     let displayTime;
     if (t.isRunning) {
         displayTime = formatMs(t.timeLeft);

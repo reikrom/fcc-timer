@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
 import Settings from './Settings';
 
-const Layout = ({ isPaused, audioRef, playPause, timeLeft, session }) => {
-    const handleStartStop = (params) => {
-        playPause();
-    };
-
+const Layout = ({
+    isPaused,
+    audioRef,
+    handlePlayPause,
+    displayTime,
+    sessionType,
+}) => {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const openSettings = () => {
         setSettingsOpen((state) => !state);
     };
 
-    // const { type } = useSelector((state) => state.timer);
+    const playPauseButton = isPaused ? (
+        <i
+            className="fa fa-play absolute"
+            style={{ top: '26%', left: '36%' }}
+        />
+    ) : (
+        <i className="fa fa-pause" />
+    );
+
+    const sessionTitle = sessionType === 'main' ? 'Session' : 'Break';
 
     return (
         <div className="App noselect text-white m-auto h-screen flex items-center justify-center">
@@ -25,27 +35,20 @@ const Layout = ({ isPaused, audioRef, playPause, timeLeft, session }) => {
             {/* Display */}
             <div className="">
                 <label className="text-4xl capitalize " id="timer-label">
-                    {session}
+                    {sessionTitle}
                 </label>
                 <div
                     className="font-orbitron font-bold text-8xl"
                     id="time-left"
                 >
-                    {timeLeft}
+                    {displayTime}
                 </div>
                 <button
                     className="relative text-3xl border-white w-16 rounded-full h-16 border-2 mt-5"
-                    onClick={handleStartStop}
+                    onClick={handlePlayPause}
                     id="start_stop"
                 >
-                    {isPaused ? (
-                        <i
-                            className="fa fa-play absolute"
-                            style={{ top: '26%', left: '36%' }}
-                        />
-                    ) : (
-                        <i className="fa fa-pause" />
-                    )}
+                    {playPauseButton}
                 </button>
             </div>
             <audio

@@ -1,111 +1,108 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import Layout from './Layout';
 import useInterval from '../hooks/useInterval';
-import { formatMs, getNow, toMs } from '../utils/timeHelper';
+import { formatMs, getNow } from '../utils/timeHelper';
 import { useDispatch, useSelector } from 'react-redux';
-import { startTimer, playPauseTimer } from '../features/timer/timerSlice';
+import {
+    startTimer,
+    pauseTimer,
+    resumeTimer,
+    startBreak,
+    sessionFinished,
+    startMainSession,
+    setTimeLeft,
+} from '../features/timer/timerSlice';
 
 function Timer() {
-    // settings
-    const { sessionLength, breakLength, isRunning, isPaused } = useSelector(
-        (state) => state.timer
-    );
-    const dispatch = useDispatch();
-
-    const [timeLeft, setTimeLeft] = useState(toMs(sessionLength));
-    const [sessionFinished, setSessionFinished] = useState(false);
-
+    const d = useDispatch();
+    const t = useSelector((state) => state.timer);
     const audioRef = useRef(null);
-    const timerRef = useRef({
-        session: 'session', // session, break
-        startTime: null,
-        endTime: null,
-    });
-    const timer = timerRef.current;
 
-    useEffect(() => {
-        setTimeLeft(toMs(sessionLength));
-    }, [sessionLength]);
+    if (t.playAudio && audioRef) {
+        audioRef.current.play();
+    }
 
-    // session has finished
-    useEffect(() => {
-        if (timeLeft <= 0) {
-            // session has finished but timer.isRunning is still true
-            setSessionFinished(true);
+    if (!t.isRunning && audioRef && audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+    }
+
+    if (t.sessionFinished) {
+        if (t.sessionType === 'main') {
+            d(startBreak());
+        } else {
+            d(startMainSession());
         }
-    }, [timeLeft]);
-
-    // handle session change
-    useEffect(() => {
-        if (sessionFinished) {
-            playAudio();
-
-            function calcEndTime(session) {
-                const timeBuffer = 500;
-                return getNow() + toMs(session) + timeBuffer;
-            }
-
-            // wait for the audio to finish
-            // setTimeout(() => {
-            if (timer.session === 'session') {
-                timer.endTime = calcEndTime(breakLength);
-                timer.session = 'break';
-            } else {
-                timer.endTime = calcEndTime(sessionLength);
-                timer.session = 'session';
-            }
-            setSessionFinished(false);
-            // }, 2500);
-        }
-    }, [breakLength, sessionFinished, sessionLength, timer]);
-
-    const playAudio = () => {
-        new Audio(audioRef.current.currentSrc).play();
-    };
-
-    const playPause = () => {
-        if (!sessionFinished) {
-            // calculate time left
-            timer.startTime = getNow();
-            timer.endTime = getNow() + timeLeft;
-
-            !isRunning ? dispatch(startTimer()) : dispatch(playPauseTimer());
-            // setIsPaused(!isPaused);
-        }
-    };
+    }
 
     // ticking logic
     useInterval(
         () => {
-            const remainder = Math.max(0, timer.endTime - getNow());
-
-            !sessionFinished && setTimeLeft(remainder);
+            const remainder = Math.max(0, t.endTime - getNow());
+            d(setTimeLeft(remainder));
         },
-        !isPaused && !sessionFinished ? 200 : null
+        t.isRunning && !t.isPaused && !t.sessionFinished ? 200 : null
     );
 
+    // handle session change
+    // useEffect(() => {
+    //     if (t.playAudio) {
+    //         audioRef.current.play();
+    //     }
+
+    //     if (t.sessionFinished) {
+    //         if (t.sessionType === 'main') {
+    //             d(startBreak());
+    //         } else {
+    //             d(startMainSession());
+    //         }
+
+    //         // setTimeout(() => {
+    //         //     if (t.sessionType === 'main') {
+    //         //         d(startBreak());
+    //         //     } else {
+    //         //         d(startMainSession());
+    //         //     }
+    //         // }, 3000);
+    //     }
+    // }, [d, t.playAudio, t.sessionFinished, t.sessionType]);
+
+    // initiate session end
+    useEffect(() => {
+        if (!t.isPaused && t.timeLeft <= 0 && !t.sessionFinished) {
+            d(sessionFinished());
+        }
+    }, [d, t.isPaused, t.sessionFinished, t.timeLeft]);
+
+    const handlePlayPause = () => {
+        if (!t.isRunning) {
+            d(startTimer());
+        } else if (t.isPaused) {
+            d(resumeTimer());
+        } else {
+            d(pauseTimer());
+        }
+    };
+
+    // rei @TODO: move this to layout?
     let displayTime;
-    if (isRunning) {
-        displayTime = formatMs(timeLeft);
+    if (t.isRunning) {
+        displayTime = formatMs(t.timeLeft);
     } else {
         displayTime =
-            timer.session === 'session'
-                ? `${sessionLength}:00`
-                : `${breakLength}:00`;
+            t.sessionType === 'main'
+                ? `${t.mainSessionLength}:00`
+                : `${t.breakLength}:00`;
     }
+
     return (
         <>
             <Layout
-                timeLeft={displayTime}
-                playPause={playPause}
-                isPaused={isPaused}
-                session={timer.session}
-            />
-            <audio
-                id="beep"
-                src="https://raw.githubusercontent.com/freeCodeCamp/cdn/master/build/testable-projects-fcc/audio/BeepSound.wav"
-                preload="auto"
-                ref={audioRef}
+                displayTime={displayTime}
+                handlePlayPause={handlePlayPause}
+                isPaused={t.isPaused}
+                sessionType={t.sessionType}
+                audioRef={audioRef}
             />
         </>
     );

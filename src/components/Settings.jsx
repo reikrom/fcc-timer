@@ -5,20 +5,20 @@ import {
     decrementSession,
     incrementBreak,
     incrementSession,
-    resetSettings,
-    stopTimer,
+    resetTimer,
 } from '../features/timer/timerSlice';
 import Button from './Button';
 import IconButton from './IconButton';
 import Label from './Label';
 
 const Setings = ({ settingsOpen }) => {
-    const { sessionLength, breakLength } = useSelector((state) => state.timer);
+    const { mainSessionLength, breakLength } = useSelector(
+        (state) => state.timer
+    );
     const dispatch = useDispatch();
 
     const handleReset = () => {
-        dispatch(resetSettings());
-        dispatch(stopTimer());
+        dispatch(resetTimer());
     };
 
     return (
@@ -53,7 +53,7 @@ const Setings = ({ settingsOpen }) => {
                     iconName="fa fa-arrow-down"
                 />
                 <span className="mx-3" id="session-length">
-                    {sessionLength}
+                    {mainSessionLength}
                 </span>
                 <IconButton
                     id="session-increment"

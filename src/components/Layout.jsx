@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Settings from './Settings';
+import ClickAwayListener from 'react-click-away-listener';
 
 const Layout = ({
     isPaused,
@@ -11,6 +12,9 @@ const Layout = ({
     const [settingsOpen, setSettingsOpen] = useState(false);
     const openSettings = () => {
         setSettingsOpen((state) => !state);
+    };
+    const closeSettings = () => {
+        setSettingsOpen(false);
     };
 
     const playPauseButton = isPaused ? (
@@ -31,7 +35,13 @@ const Layout = ({
                 className="fa fa-gear text-6xl absolute right-3 top-3 opacity-40 hover:opacity-100"
             />
             {/* Settings */}
-            <Settings settingsOpen={settingsOpen} />
+            <ClickAwayListener
+                onClickAway={() => {
+                    settingsOpen && closeSettings();
+                }}
+            >
+                <Settings settingsOpen={settingsOpen} />
+            </ClickAwayListener>
             {/* Display */}
             <div className="">
                 <label className="text-4xl capitalize " id="timer-label">
